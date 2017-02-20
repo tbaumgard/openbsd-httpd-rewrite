@@ -1,0 +1,196 @@
+Index: http.h
+===================================================================
+RCS file: /cvs/src/usr.sbin/httpd/http.h,v
+retrieving revision 1.14
+diff -u -p -r1.14 http.h
+--- http.h	1 Aug 2016 21:15:30 -0000	1.14
++++ http.h	18 Feb 2017 18:46:53 -0000
+@@ -243,8 +243,9 @@ struct http_descriptor {
+ 	char			*http_version;
+ 	unsigned int		 http_status;
+
+-	/* Rewritten path remains NULL if not used */
++	/* Rewritten path and query remain NULL if not used */
+ 	char			*http_path_alias;
++	char			*http_query_alias;
+
+ 	/* A tree of headers and attached lists for repeated headers. */
+ 	struct kv		*http_lastheader;
+Index: httpd.conf.5
+===================================================================
+RCS file: /cvs/src/usr.sbin/httpd/httpd.conf.5,v
+retrieving revision 1.79
+diff -u -p -r1.79 httpd.conf.5
+--- httpd.conf.5	7 Feb 2017 12:27:42 -0000	1.79
++++ httpd.conf.5	18 Feb 2017 18:46:54 -0000
+@@ -394,6 +394,8 @@ The pattern may contain captures that ca
+ .Ar uri
+ of an enclosed
+ .Ic block return
++or
++.Ic pass rewrite
+ option.
+ .It Oo Ic no Oc Ic log Op Ar option
+ Set the specified logging options.
+@@ -448,10 +450,23 @@ Enable or disable logging to
+ .Xr syslog 3
+ instead of the log files.
+ .El
+-.It Ic pass
++.It Ic pass Op Ic rewrite Ar uri
+ Disable any previous
+ .Ic block
+ in a location.
++If the optional
++.Ar uri
++argument is specified,
++.Xr httpd 8
++will use
++.Ar uri
++instead of the matched location string when determining what
++to load.
++The
++.Ar uri
++may contain predefined macros as explained in the
++.Ic block return
++option.
+ .It Ic root Ar option
+ Configure the document root and options for the request path.
+ Valid options are:
+Index: parse.y
+===================================================================
+RCS file: /cvs/src/usr.sbin/httpd/parse.y,v
+retrieving revision 1.89
+diff -u -p -r1.89 parse.y
+--- parse.y	7 Feb 2017 12:27:42 -0000	1.89
++++ parse.y	18 Feb 2017 18:46:54 -0000
+@@ -134,7 +134,7 @@ typedef struct {
+ %token	LOCATION LOG LOGDIR MATCH MAXIMUM NO NODELAY OCSP ON PORT PREFORK
+ %token	PROTOCOLS REQUESTS ROOT SACK SERVER SOCKET STRIP STYLE SYSLOG TCP TIMEOUT
+ %token	TLS TYPE TYPES HSTS MAXAGE SUBDOMAINS DEFAULT PRELOAD REQUEST
+-%token	ERROR INCLUDE AUTHENTICATE WITH BLOCK DROP RETURN PASS
++%token	ERROR INCLUDE AUTHENTICATE WITH BLOCK DROP RETURN PASS REWRITE
+ %token	<v.string>	STRING
+ %token  <v.number>	NUMBER
+ %type	<v.port>	port
+@@ -977,10 +977,12 @@ filter		: block RETURN NUMBER optstring
+ 			/* Forbidden */
+ 			srv_conf->return_code = 403;
+ 		}
+-		| PASS				{
+-			srv_conf->flags &= ~SRVFLAG_BLOCK;
+-			srv_conf->flags |= SRVFLAG_NO_BLOCK;
+-		}
++		| pass REWRITE STRING	{
++			free(srv_conf->return_uri);
++			srv_conf->return_uri = $3;
++			srv_conf->return_uri_len = strlen($3) + 1;
++ 		}
++		| pass
+ 		;
+
+ block		: BLOCK				{
+@@ -989,6 +991,12 @@ block		: BLOCK				{
+ 		}
+ 		;
+
++pass		: PASS				{
++			srv_conf->flags &= ~SRVFLAG_BLOCK;
++			srv_conf->flags |= SRVFLAG_NO_BLOCK;
++		}
++		;
++
+ optmatch	: /* empty */		{ $$ = 0; }
+ 		| MATCH			{ $$ = 1; }
+ 		;
+@@ -1237,6 +1245,7 @@ lookup(char *s)
+ 		{ "request",		REQUEST },
+ 		{ "requests",		REQUESTS },
+ 		{ "return",		RETURN },
++		{ "rewrite",		REWRITE },
+ 		{ "root",		ROOT },
+ 		{ "sack",		SACK },
+ 		{ "server",		SERVER },
+Index: server_fcgi.c
+===================================================================
+RCS file: /cvs/src/usr.sbin/httpd/server_fcgi.c,v
+retrieving revision 1.74
+diff -u -p -r1.74 server_fcgi.c
+--- server_fcgi.c	21 Jan 2017 11:32:04 -0000	1.74
++++ server_fcgi.c	18 Feb 2017 18:46:54 -0000
+@@ -97,7 +97,7 @@ server_fcgi(struct httpd *env, struct cl
+ 	int				 pathlen;
+ 	int				 fd = -1, ret;
+ 	const char			*stripped, *p, *alias, *errstr = NULL;
+-	char				*str, *script = NULL;
++	char				*queryalias, *str, *script = NULL;
+
+ 	if (srv_conf->socket[0] == ':') {
+ 		struct sockaddr_storage	 ss;
+@@ -193,6 +193,10 @@ server_fcgi(struct httpd *env, struct cl
+ 	    ? desc->http_path_alias
+ 	    : desc->http_path;
+
++	queryalias = desc->http_query_alias != NULL
++	    ? desc->http_query_alias
++	    : desc->http_query;
++
+ 	stripped = server_root_strip(alias, srv_conf->strip);
+ 	if ((pathlen = asprintf(&script, "%s%s", srv_conf->root, stripped))
+ 	    == -1) {
+@@ -241,8 +245,8 @@ server_fcgi(struct httpd *env, struct cl
+ 		goto fail;
+ 	}
+
+-	if (desc->http_query) {
+-		if (fcgi_add_param(&param, "QUERY_STRING", desc->http_query,
++	if (queryalias) {
++		if (fcgi_add_param(&param, "QUERY_STRING", queryalias,
+ 		    clt) == -1) {
+ 			errstr = "failed to encode param";
+ 			goto fail;
+Index: server_http.c
+===================================================================
+RCS file: /cvs/src/usr.sbin/httpd/server_http.c,v
+retrieving revision 1.114
+diff -u -p -r1.114 server_http.c
+--- server_http.c	7 Feb 2017 12:22:41 -0000	1.114
++++ server_http.c	18 Feb 2017 18:46:54 -0000
+@@ -1155,6 +1155,7 @@ server_response(struct httpd *httpd, str
+ {
+ 	char			 path[PATH_MAX];
+ 	char			 hostname[HOST_NAME_MAX+1];
++	char			 buf[IBUF_READ_SIZE];
+ 	struct http_descriptor	*desc = clt->clt_descreq;
+ 	struct http_descriptor	*resp = clt->clt_descresp;
+ 	struct server		*srv = clt->clt_srv;
+@@ -1276,7 +1277,28 @@ server_response(struct httpd *httpd, str
+ 		server_abort_http(clt, srv_conf->return_code,
+ 		    srv_conf->return_uri);
+ 		return (-1);
+-	} else if (srv_conf->flags & SRVFLAG_AUTH &&
++	} else if (srv_conf->return_uri) {
++		memset(buf, 0, sizeof(buf));
++
++		if (server_expand_http(clt, srv_conf->return_uri, buf,
++		    sizeof(buf)) == NULL)
++			goto fail;
++
++		free(desc->http_path_alias);
++		if ((desc->http_path_alias = strdup(buf)) == NULL)
++			goto fail;
++
++		free(desc->http_query_alias);
++		desc->http_query_alias = strchr(desc->http_path_alias, '?');
++		if (desc->http_query_alias != NULL) {
++			*desc->http_query_alias++ = '\0';
++			if ((desc->http_query_alias =
++			    strdup(desc->http_query_alias)) == NULL)
++				goto fail;
++		}
++	}
++
++	if (srv_conf->flags & SRVFLAG_AUTH &&
+ 	    server_http_authenticate(srv_conf, clt) == -1) {
+ 		server_abort_http(clt, 401, srv_conf->auth_realm);
+ 		return (-1);
