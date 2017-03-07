@@ -47,11 +47,7 @@ server "www.example.com" {
 
 	# The setting above could be accomplished without rewrites like so:
 	#location "/images/*" {
-	#	root {
-	#		"/www.example.com/assets/images"
-	#		strip 1
-	#	}
-	#
+	#	root "/www.example.com/assets"
 	#	pass
 	#}
 
