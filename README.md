@@ -52,6 +52,8 @@ server "www.example.com" {
 	#}
 
 	# URL routing with query string modifications for a legacy script.
+	# All predefined macros are enumerated and described in the httpd.conf(5)
+	# man page.
 	location match "^/legacy/(.*)" {
 		fastcgi socket "/run/php-fpm.sock"
 		pass rewrite "/legacy.php?target=%1&query=$QUERY_STRING"
