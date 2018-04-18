@@ -1,12 +1,12 @@
 # OpenBSD `httpd` Rewrite Support
 
-These patches add basic rewrite support to various versions of [OpenBSD's](https://www.openbsd.org/) [httpd](http://man.openbsd.org/OpenBSD-current/man8/httpd.8) web server without having to use redirects.
+These patches add basic rewrite support to various versions of [OpenBSD's](https://www.openbsd.org/) [httpd](https://man.openbsd.org/httpd) web server without having to use redirects.
 
 An important distinction between this mechanism and other common rewrite mechanisms available for Apache, nginx, etc. is that this one doesn't include the ability to rewrite URLs that have already been rewritten. This is to retain the same semantics of the `block return code uri` option and to keep things simple in terms of implementation and configuration.
 
 ## Applying a Patch
 
-Follow the instructions in the [OpenBSD FAQ](http://www.openbsd.org/faq/faq10.html#Patches) for getting the source and any errata patches for your system.
+Follow the instructions in the [OpenBSD FAQ](https://www.openbsd.org/faq/faq5.html) for getting the source and any errata patches for your system.
 
 After that, fetch and apply the rewrite patch, making sure to use the correct version for your system. The following example assumes that you're running -current:
 
@@ -28,7 +28,7 @@ make install
 
 ## Example Configuration
 
-The following partial configuration for [`httpd.conf`](http://man.openbsd.org/OpenBSD-current/man5/httpd.conf.5) demonstrates some common use cases.
+The following partial configuration for [`httpd.conf`](https://man.openbsd.org/httpd.conf) demonstrates some common use cases.
 
 ```
 server "www.example.com" {
