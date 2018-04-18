@@ -4,7 +4,7 @@ RCS file: /cvs/src/usr.sbin/httpd/http.h,v
 retrieving revision 1.14
 diff -u -p -r1.14 http.h
 --- http.h	1 Aug 2016 21:15:30 -0000	1.14
-+++ http.h	14 Feb 2018 14:03:08 -0000
++++ http.h	18 Apr 2018 05:06:36 -0000
 @@ -243,8 +243,9 @@ struct http_descriptor {
  	char			*http_version;
  	unsigned int		 http_status;
@@ -22,7 +22,7 @@ RCS file: /cvs/src/usr.sbin/httpd/httpd.conf.5,v
 retrieving revision 1.89
 diff -u -p -r1.89 httpd.conf.5
 --- httpd.conf.5	4 Jan 2018 20:38:12 -0000	1.89
-+++ httpd.conf.5	14 Feb 2018 14:03:08 -0000
++++ httpd.conf.5	18 Apr 2018 05:06:36 -0000
 @@ -396,6 +396,8 @@ The pattern may contain captures that ca
  .Ar uri
  of an enclosed
@@ -63,7 +63,7 @@ RCS file: /cvs/src/usr.sbin/httpd/parse.y,v
 retrieving revision 1.92
 diff -u -p -r1.92 parse.y
 --- parse.y	28 Aug 2017 06:00:05 -0000	1.92
-+++ parse.y	14 Feb 2018 14:03:09 -0000
++++ parse.y	18 Apr 2018 05:06:37 -0000
 @@ -134,7 +134,7 @@ typedef struct {
  %token	LISTEN LOCATION LOG LOGDIR MATCH MAXIMUM NO NODELAY OCSP ON PORT PREFORK
  %token	PROTOCOLS REQUESTS ROOT SACK SERVER SOCKET STRIP STYLE SYSLOG TCP TICKET
@@ -117,7 +117,7 @@ RCS file: /cvs/src/usr.sbin/httpd/server_fcgi.c,v
 retrieving revision 1.75
 diff -u -p -r1.75 server_fcgi.c
 --- server_fcgi.c	31 Jul 2017 08:02:49 -0000	1.75
-+++ server_fcgi.c	14 Feb 2018 14:03:10 -0000
++++ server_fcgi.c	18 Apr 2018 05:06:37 -0000
 @@ -97,7 +97,7 @@ server_fcgi(struct httpd *env, struct cl
  	int				 pathlen;
  	int				 fd = -1, ret;
@@ -155,7 +155,7 @@ RCS file: /cvs/src/usr.sbin/httpd/server_http.c,v
 retrieving revision 1.118
 diff -u -p -r1.118 server_http.c
 --- server_http.c	14 Dec 2017 21:19:47 -0000	1.118
-+++ server_http.c	14 Feb 2018 14:03:10 -0000
++++ server_http.c	18 Apr 2018 05:06:38 -0000
 @@ -1169,6 +1169,7 @@ server_response(struct httpd *httpd, str
  {
  	char			 path[PATH_MAX];
