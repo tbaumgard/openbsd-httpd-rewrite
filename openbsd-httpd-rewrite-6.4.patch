@@ -4,7 +4,7 @@ RCS file: /cvs/src/usr.sbin/httpd/http.h,v
 retrieving revision 1.14
 diff -u -p -r1.14 http.h
 --- http.h	1 Aug 2016 21:15:30 -0000	1.14
-+++ http.h	30 Dec 2018 19:47:54 -0000
++++ http.h	30 Dec 2018 19:45:32 -0000
 @@ -243,8 +243,9 @@ struct http_descriptor {
  	char			*http_version;
  	unsigned int		 http_status;
@@ -22,7 +22,7 @@ RCS file: /cvs/src/usr.sbin/httpd/httpd.conf.5,v
 retrieving revision 1.101
 diff -u -p -r1.101 httpd.conf.5
 --- httpd.conf.5	20 Jun 2018 16:43:05 -0000	1.101
-+++ httpd.conf.5	30 Dec 2018 19:47:54 -0000
++++ httpd.conf.5	30 Dec 2018 19:45:32 -0000
 @@ -208,7 +208,9 @@ may contain predefined macros that will 
  .It Ic $DOCUMENT_URI
  The request path.
@@ -37,10 +37,10 @@ diff -u -p -r1.101 httpd.conf.5
 Index: server_fcgi.c
 ===================================================================
 RCS file: /cvs/src/usr.sbin/httpd/server_fcgi.c,v
-retrieving revision 1.77
-diff -u -p -r1.77 server_fcgi.c
---- server_fcgi.c	15 Oct 2018 08:16:17 -0000	1.77
-+++ server_fcgi.c	30 Dec 2018 19:47:54 -0000
+retrieving revision 1.76
+diff -u -p -r1.76 server_fcgi.c
+--- server_fcgi.c	19 May 2018 13:56:56 -0000	1.76
++++ server_fcgi.c	30 Dec 2018 19:45:32 -0000
 @@ -97,7 +97,7 @@ server_fcgi(struct httpd *env, struct cl
  	int				 pathlen;
  	int				 fd = -1, ret;
@@ -75,10 +75,10 @@ diff -u -p -r1.77 server_fcgi.c
 Index: server_http.c
 ===================================================================
 RCS file: /cvs/src/usr.sbin/httpd/server_http.c,v
-retrieving revision 1.128
-diff -u -p -r1.128 server_http.c
---- server_http.c	4 Dec 2018 18:12:08 -0000	1.128
-+++ server_http.c	30 Dec 2018 19:47:54 -0000
+retrieving revision 1.125
+diff -u -p -r1.125 server_http.c
+--- server_http.c	11 Oct 2018 09:52:22 -0000	1.125
++++ server_http.c	30 Dec 2018 19:45:33 -0000
 @@ -104,6 +104,8 @@ server_httpdesc_free(struct http_descrip
  	desc->http_path_alias = NULL;
  	free(desc->http_query);
@@ -88,7 +88,7 @@ diff -u -p -r1.128 server_http.c
  	free(desc->http_version);
  	desc->http_version = NULL;
  	free(desc->http_host);
-@@ -1032,7 +1034,7 @@ server_expand_http(struct client *clt, c
+@@ -1037,7 +1039,7 @@ server_expand_http(struct client *clt, c
  {
  	struct http_descriptor	*desc = clt->clt_descreq;
  	struct server_config	*srv_conf = clt->clt_srv_conf;
@@ -97,7 +97,7 @@ diff -u -p -r1.128 server_http.c
  	const char		*errstr = NULL, *p;
  	size_t			 size;
  	int			 n, ret;
-@@ -1072,6 +1074,18 @@ server_expand_http(struct client *clt, c
+@@ -1077,6 +1079,18 @@ server_expand_http(struct client *clt, c
  		if (ret != 0)
  			return (NULL);
  	}
@@ -116,7 +116,7 @@ diff -u -p -r1.128 server_http.c
  	if (strstr(val, "$QUERY_STRING") != NULL) {
  		if (desc->http_query == NULL) {
  			ret = expand_string(buf, len, "$QUERY_STRING", "");
-@@ -1304,11 +1318,11 @@ server_response(struct httpd *httpd, str
+@@ -1309,11 +1323,11 @@ server_response(struct httpd *httpd, str
  		 * be URL encoded - either specified by the user or by using the
  		 * original $QUERY_STRING.
  		 */
@@ -131,7 +131,7 @@ diff -u -p -r1.128 server_http.c
  				goto fail;
  		}
  
-@@ -1317,15 +1331,15 @@ server_response(struct httpd *httpd, str
+@@ -1322,15 +1336,15 @@ server_response(struct httpd *httpd, str
  		    path, sizeof(path)) == NULL)
  			goto fail;
  
@@ -151,4 +151,4 @@ diff -u -p -r1.128 server_http.c
 +		srv_conf = server_getlocation(clt, desc->http_path_alias);
  	}
  
- 	if (clt->clt_toread > 0 && (size_t)clt->clt_toread >
+ 	if (srv_conf->flags & SRVFLAG_BLOCK) {
