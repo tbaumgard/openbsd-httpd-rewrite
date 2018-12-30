@@ -66,3 +66,7 @@ server "www.example.com" {
 	}
 }
 ```
+
+## License
+
+This work is available under a BSD license as described in the LICENSE.txt file.
