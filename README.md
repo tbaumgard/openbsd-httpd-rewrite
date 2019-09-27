@@ -1,16 +1,22 @@
 # OpenBSD `httpd` Rewrite Patches
 
+## OpenBSD 6.6 and newer
+
+As of version 6.6, OpenBSD includes support for rewrites and has also [incorporated the supplemental patches](https://marc.info/?l=openbsd-cvs&m=155735202905914&w=2) found here. No patching is necessary.
+
+## OpenBSD 6.5 and earlier
+
 These patches add or enhance rewrite support in various versions of [OpenBSD's](https://www.openbsd.org/) [httpd](https://man.openbsd.org/httpd) web server.
 
-## Applying a Patch
+### Applying a Patch
 
 Follow the instructions in the [OpenBSD FAQ](https://www.openbsd.org/faq/faq5.html) for getting the source and any errata patches for your system.
 
-After that, fetch and apply the rewrite patch, making sure to use the correct version for your system. The following example assumes that you're running -current:
+After that, fetch and apply the corresponding rewrite patch, making sure to use the correct version for your system. The following example assumes that you're running 6.5:
 
 ```sh
 cd /usr/src/usr.sbin/httpd
-ftp 'https://raw.githubusercontent.com/tbaumgard/openbsd-httpd-rewrite/master/openbsd-httpd-rewrite-current.patch'
+ftp 'https://raw.githubusercontent.com/tbaumgard/openbsd-httpd-rewrite/master/openbsd-httpd-rewrite-6.5.patch'
 patch -p0 < openbsd-httpd-rewrite-current.patch
 ```
 
@@ -24,7 +30,7 @@ make
 make install
 ```
 
-## OpenBSD 6.4 and -current
+### OpenBSD 6.4 and 6.5
 
 `httpd` includes support for URL rewrites as of OpenBSD 6.4. However, [there's a bug](https://marc.info/?l=openbsd-tech&m=153303654230606) that causes the `REQUEST_URI` CGI variable to be set to the rewritten URL instead of the requested URL. The patches for these versions fix this issue.
 
@@ -69,7 +75,7 @@ server "www.example.com" {
 }
 ```
 
-## OpenBSD 5.9-6.3
+### OpenBSD 5.9-6.3
 
 `httpd` didn't include any support for URL rewrites prior to OpenBSD 6.4, so the patches for these versions add it.
 
