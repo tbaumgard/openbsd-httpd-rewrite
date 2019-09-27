@@ -44,7 +44,7 @@ server "www.example.com" {
 
 	# Rewrite the old path for images directory.
 	location match "^/images/(.*)" {
-		pass rewrite "/assets/images/%1"
+		request rewrite "/assets/images/%1"
 	}
 
 	# The setting above could be accomplished without rewrites like so:
@@ -58,13 +58,13 @@ server "www.example.com" {
 	# man page, including the $QUERY_STRING_ENC added by the patch.
 	location match "^/legacy/(.*)" {
 		fastcgi socket "/run/php-fpm.sock"
-		pass rewrite "/legacy.php?target=%1&query=$QUERY_STRING_ENC"
+		request rewrite "/legacy.php?target=%1&query=$QUERY_STRING_ENC"
 	}
 
 	# Default URL routing for everything else. The query string is untouched.
 	location "*" {
 		fastcgi socket "/run/php-fpm.sock"
-		pass rewrite "/default.php"
+		request rewrite "/default.php"
 	}
 }
 ```
