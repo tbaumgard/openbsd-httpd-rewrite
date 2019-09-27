@@ -17,7 +17,7 @@ After that, fetch and apply the corresponding rewrite patch, making sure to use 
 ```sh
 cd /usr/src/usr.sbin/httpd
 ftp 'https://raw.githubusercontent.com/tbaumgard/openbsd-httpd-rewrite/master/openbsd-httpd-rewrite-6.5.patch'
-patch -p0 < openbsd-httpd-rewrite-current.patch
+patch -p0 < openbsd-httpd-rewrite-6.5.patch
 ```
 
 Once that's done, either build and install the entire system if it's outdated or do the following to build and install `httpd` only:
